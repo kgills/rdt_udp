@@ -2,7 +2,6 @@
 
 from rdt_defs import *
 
-
 from random import randint
 
 ################################################################################
@@ -53,8 +52,6 @@ while True:
 
             # Send the ACK
             sock.sendto(ack_packet, (CLIENT_IP, CLIENT_PORT))
-
-
 
         # Add the data
         data += data_temp[5:]

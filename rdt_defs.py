@@ -10,6 +10,8 @@ CLIENT_PORT = 5006
 
 SOCK_TIMEOUT = 0.1 # 100 ms
 
+WINDOW_SIZE = 1
+
 CRC_SEED = 0x1021
 HEADER_LEN = 5
 MSS = 100
@@ -81,3 +83,15 @@ def crc_check(data):
         return False
 
     return True
+
+
+STATE_ACKED = 0
+STATE_UNACKED = 1
+STATE_USABLE = 2
+STATE_UNUSABLE = 3
+
+class WindowElement:
+    data = bytearray()
+    seq = 0
+    time_sent = 0
+    state = STATE_UNUSABLE
