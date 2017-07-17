@@ -2,6 +2,9 @@
 
 from rdt_defs import *
 
+
+from random import randint
+
 ################################################################################
 # Definitions
 
@@ -37,9 +40,21 @@ while True:
             print("CRC Error! packet_crc:", hex(crc), "calc_crc:",hex(crc_calc))
             break;
 
-        # Send the ack
-        ack_packet = pack_packet(FLAGS_ACK, data_temp[SEQ_POS], 0)
-        sock.sendto(ack_packet, (CLIENT_IP, CLIENT_PORT))
+
+        # Simulate packet drop
+        if(randint(0,100) != 1):
+
+            # Simulate NACK
+            if(randint(0,100) == 1):
+                # Send NACK
+                ack_packet = pack_packet(FLAGS_NACK, data_temp[SEQ_POS], 0)
+            else:
+                ack_packet = pack_packet(FLAGS_ACK, data_temp[SEQ_POS], 0)
+
+            # Send the ACK
+            sock.sendto(ack_packet, (CLIENT_IP, CLIENT_PORT))
+
+
 
         # Add the data
         data += data_temp[5:]
@@ -51,6 +66,6 @@ while True:
     if(crc_error == 0):
         print("Writing file")
         # Write byte array to file
-        with open("output.txt", 'wb') as output:
+        with open("output.png", 'wb') as output:
             output.write(data)
 

@@ -25,6 +25,9 @@ print("UDP Client port:", CLIENT_PORT)
 # Setup listener for the ACK packets from the server
 sock.bind((CLIENT_IP, CLIENT_PORT))
 
+# Set the timeout
+sock.settimeout(SOCK_TIMEOUT)
+
 # Get a byte array of the file
 with open(sys.argv[1], "rb") as sendFile:
     f = sendFile.read()
@@ -56,7 +59,11 @@ while(i < data_len):
         sock.sendto(data_temp, (SERVER_IP, SERVER_PORT))
 
         # Wait for an ACK
-        ack_data, addr = sock.recvfrom(PACKET_LEN)
+        try:
+            ack_data, addr = sock.recvfrom(PACKET_LEN)  
+        except socket.timeout:
+            print("Timed out waiting for ACK")
+            continue
 
         # Check the CRC
         if(crc_check(ack_data) != True):
@@ -73,7 +80,10 @@ while(i < data_len):
 
         break
 
+    # Update the sequence number
     seq += 1
+    if(seq == 256):
+        seq = 1
 
 
 print("Done sending file")
