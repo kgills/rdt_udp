@@ -8,10 +8,12 @@ CLIENT_PORT = 5006
 # SOCK_TIMEOUT = 0.1 # 100 ms
 SOCK_TIMEOUT = 0.0 # non-blocking
 
-WINDOW_SIZE = 1
+SEND_BASE_TIMEOUT_MS = 200
+
+WINDOW_SIZE = 64
 
 CRC_SEED = 0x1021
-HEADER_LEN = 5
+HEADER_LEN = 4
 MSS = 100
 PACKET_LEN = MSS+HEADER_LEN
 
@@ -21,7 +23,7 @@ FLAGS_ACK = 0x02
 FLAGS_NACK = 0x04
 
 SEQ_POS = 1
-CRC_POS = 3
+CRC_POS = 2
 
 sock = socket.socket(socket.AF_INET, # Internet
                      socket.SOCK_DGRAM) # UDP
@@ -41,7 +43,7 @@ def crc16(crc, data):
         lsb = (x ^ (x << 5)) & 255
     return (msb << 8) + lsb
 
-def pack_packet(flags, seq, window, data=None):
+def pack_packet(flags, seq, data=None):
 
     if(data == None):
         data = bytearray()
@@ -51,7 +53,6 @@ def pack_packet(flags, seq, window, data=None):
     # Add in reverse order
     crc = 0
     data_temp = crc.to_bytes(2, 'big') + data
-    data_temp = window.to_bytes(1, 'big') + data_temp
     data_temp = seq.to_bytes(1, 'big') + data_temp
     data_temp = flags.to_bytes(1, 'big') + data_temp
 
@@ -82,15 +83,13 @@ def crc_check(data):
 
     return True
 
-
 STATE_ACKED = 0
 STATE_UNACKED = 1
 STATE_USABLE = 2
-STATE_UNUSABLE = 3
 
 class WindowElement:
-    data = bytearray()
     seq = 0
-    mult = 1
+    mult = 0
     time_sent = 0
-    state = STATE_UNUSABLE
+    state = STATE_USABLE
+    data = bytearray()
