@@ -191,7 +191,7 @@ while(sending == 1):
 
 end_time = datetime.datetime.now()
 
-print("loss, latency, mss, elapsed")
+print("loss, latency, variance, mss, elapsed")
 print(sys.argv[2],",",sys.argv[3],",",sys.argv[4],",",MSS,",",(end_time-start_time).total_seconds())
 print("Done sending file")
 sock.close()
