@@ -25,14 +25,6 @@ FLAGS_NACK = 0x04
 SEQ_POS = 1
 CRC_POS = 2
 
-sock = socket.socket(socket.AF_INET, # Internet
-                     socket.SOCK_DGRAM) # UDP
-
-def signal_handler(signal, frame):
-    print("\nClosing server")
-    sock.close()
-    sys.exit(0)
-
 def crc16(crc, data):
     msb = crc >> 8
     lsb = crc & 255

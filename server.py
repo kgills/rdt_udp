@@ -2,7 +2,14 @@ from rdt_defs import *
 
 ################################################################################
 # Definitions
+sock = socket.socket(socket.AF_INET, # Internet
+                     socket.SOCK_DGRAM) # UDP
 
+def signal_handler(signal, frame):
+    print("\nClosing server")
+    sock.close()
+    sys.exit(0)
+    
 ################################################################################
 # Main
 
