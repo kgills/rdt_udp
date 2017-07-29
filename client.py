@@ -19,8 +19,8 @@ def signal_handler(signal, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 # Parse the input arguments
-usage = "python client.py <path_to_file> loss% latency(ms)"
-if len(sys.argv) < 4:
+usage = "python client.py <path_to_file> loss% latency(ms) variance"
+if len(sys.argv) < 5:
     print(usage)
     sys.exit(1)
 
@@ -192,6 +192,6 @@ while(sending == 1):
 end_time = datetime.datetime.now()
 
 print("loss, latency, mss, elapsed")
-print(sys.argv[2],",",sys.argv[3],",",MSS,",",(end_time-start_time).total_seconds())
+print(sys.argv[2],",",sys.argv[3],",",sys.argv[4],",",MSS,",",(end_time-start_time).total_seconds())
 print("Done sending file")
 sock.close()
