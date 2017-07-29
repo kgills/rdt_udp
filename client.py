@@ -30,10 +30,8 @@ print("UDP Server port:", SERVER_PORT)
 print("UDP Client port:", CLIENT_PORT)
 
 # Setup listener for the ACK packets from the server
-sock.bind((server_ip, CLIENT_PORT))
-
-# Set the timeout
 sock.settimeout(SOCK_TIMEOUT)
+sock.bind((server_ip, CLIENT_PORT))
 
 # Initialize the window
 window = []
@@ -139,54 +137,55 @@ while(sending == 1):
             j = ack_data[SEQ_POS]
             window[j].state = STATE_ACKED
 
-    ################################################################################
+    ############################################################################
+    # Check the send_base for timeout
+    
+    if(window[send_base].state == STATE_UNACKED):
+
+        # See if the send_base has timed out
+        now = datetime.datetime.now()
+        elapsed = (now - window[send_base].time_sent).total_seconds() * 1000     # convert S to MS
+        if(int(elapsed) > SEND_BASE_TIMEOUT_MS):
+
+            # Find the piece of data we need to send
+            j = send_base
+            data_start = (window[j].mult*2*WINDOW_SIZE + window[j].seq)*MSS
+            data_end = data_start + MSS
+            data_temp = bytearray(data[data_start:data_end])
+
+            # Create the header elements
+            if(data_end >= data_len):
+                flags = FLAGS_FIN
+            else:
+                flags = 0
+
+            data_temp = pack_packet(flags, window[j].seq, data_temp)
+
+            # Send the packet
+            sock.sendto(data_temp, (server_ip, SERVER_PORT))
+
+            # Save the state
+            window[j].time_sent = datetime.datetime.now()
+                
+    ############################################################################
     # Advanse the send_base
 
-    while(window[send_base].state != STATE_USABLE):
+    while(window[send_base].state == STATE_ACKED):
 
-        if(window[send_base].state == STATE_UNACKED):
+        # See if we're done sending the file
+        data_start = (window[send_base].mult*2*WINDOW_SIZE + window[send_base].seq)*MSS
+        data_end = data_start + MSS
 
-            # See if the send_base has timed out
-            now = datetime.datetime.now()
-            elapsed = (now - window[send_base].time_sent).total_seconds() * 1000     # convert S to MS
-            if(int(elapsed) > SEND_BASE_TIMEOUT_MS):
+        if(data_end >= data_len):
+            sending = 0
 
-                # Find the piece of data we need to send
-                j = send_base
-                data_start = (window[j].mult*2*WINDOW_SIZE + window[j].seq)*MSS
-                data_end = data_start + MSS
-                data_temp = bytearray(data[data_start:data_end])
+        # Advance the send_base
+        window[send_base].state = STATE_USABLE
+        window[send_base].mult = window[send_base].mult+1
 
-                # Create the header elements
-                if(data_end >= data_len):
-                    flags = FLAGS_FIN
-                else:
-                    flags = 0
-
-                data_temp = pack_packet(flags, window[j].seq, data_temp)
-
-                # Send the packet
-                sock.sendto(data_temp, (server_ip, SERVER_PORT))
-
-                # Save the state
-                window[j].time_sent = datetime.datetime.now()
-                
-        elif(window[send_base].state == STATE_ACKED):
-
-            # See if we're done sending the file
-            data_start = (window[send_base].mult*2*WINDOW_SIZE + window[send_base].seq)*MSS
-            data_end = data_start + MSS
-
-            if(data_end >= data_len):
-                sending = 0
-
-            # Advance the send_base
-            window[send_base].state = STATE_USABLE
-            window[send_base].mult = window[send_base].mult+1
-
-            send_base = send_base+1
-            if(send_base >= 2*WINDOW_SIZE):
-                send_base = send_base - 2*WINDOW_SIZE
+        send_base = send_base+1
+        if(send_base >= 2*WINDOW_SIZE):
+            send_base = send_base - 2*WINDOW_SIZE
 
 
 print("Done sending file")
