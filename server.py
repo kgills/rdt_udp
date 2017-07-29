@@ -9,7 +9,7 @@ def signal_handler(signal, frame):
     print("\nClosing server")
     sock.close()
     sys.exit(0)
-    
+
 ################################################################################
 # Main
 
@@ -33,7 +33,7 @@ sock.bind((server_ip, SERVER_PORT))
 
 # Initialize the window
 window = []
-for i in range(0,WINDOW_SIZE*2):
+for i in range(0,SEQ_SIZE):
     x = WindowElement()
     x.seq = i
     x.mult = 0
@@ -67,13 +67,22 @@ while(receiving == 1):
             send_nack = 1
 
         # Check that the sequence number is in the window
-        elif((packet_data[SEQ_POS] > (window[recv_base].seq + WINDOW_SIZE)) or
-            (packet_data[SEQ_POS] < window[recv_base].seq)):
+        seq = packet_data[SEQ_POS]
 
+        low_limit = recv_base - WINDOW_SIZE
+        if(low_limit < 0):
+            low_limit = SEQ_SIZE + low_limit
+
+        high_limit = recv_base + WINDOW_SIZE
+        if(high_limit >= SEQ_SIZE):
+            hight_limit = high_limit - SEQ_SIZE
+
+        if(((seq - low_limit)%(SEQ_SIZE)) > ((high_limit - low_limit)%(SEQ_SIZE))):
+            print("SEQ out of range:",seq,"low:",low_limit,"high:",high_limit)
             send_nack = 1
 
         # Send ACK
-        else:
+        if(send_nack == 0):
             ack_packet = pack_packet(FLAGS_ACK, packet_data[SEQ_POS])
             sock.sendto(ack_packet, (addr))
 
@@ -83,7 +92,7 @@ while(receiving == 1):
             # Buffer the data
             window[packet_data[SEQ_POS]].data = packet_data
 
-        if(send_nack == 1):
+        else:
             nack_packet = pack_packet(FLAGS_NACK, packet_data[SEQ_POS])
             sock.sendto(ack_packet, (addr))
 
@@ -105,7 +114,7 @@ while(receiving == 1):
 
         # Advance the recv base
         recv_base = recv_base + 1
-        if(recv_base == 2*WINDOW_SIZE):
+        if(recv_base == SEQ_SIZE):
             recv_base = 0
             
 print("Writing file")

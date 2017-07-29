@@ -35,7 +35,7 @@ sock.bind((server_ip, CLIENT_PORT))
 
 # Initialize the window
 window = []
-for i in range(0,WINDOW_SIZE*2):
+for i in range(0,SEQ_SIZE):
     x = WindowElement()
     x.seq = i
     x.mult = 0
@@ -64,13 +64,13 @@ while(sending == 1):
 
         # Wrap the window pointer
         j = send_base + i
-        if(j >= 2*WINDOW_SIZE):
-            j = j - 2*WINDOW_SIZE
+        if(j >= SEQ_SIZE):
+            j = j - SEQ_SIZE
 
         if(window[j].state == STATE_USABLE):
 
             # Find the piece of data we need to send
-            data_start = (window[j].mult*2*WINDOW_SIZE + window[j].seq)*MSS
+            data_start = (window[j].mult*SEQ_SIZE + window[j].seq)*MSS
             data_end = data_start + MSS
             data_temp = bytearray(data[data_start:data_end])
 
@@ -114,7 +114,7 @@ while(sending == 1):
 
             # Find the piece of data we need to send
             j = ack_data[SEQ_POS]
-            data_start = (window[j].mult*2*WINDOW_SIZE + window[j].seq)*MSS
+            data_start = (window[j].mult*SEQ_SIZE + window[j].seq)*MSS
             data_end = data_start + MSS
             data_temp = bytearray(data[data_start:data_end])
 
@@ -149,7 +149,7 @@ while(sending == 1):
 
             # Find the piece of data we need to send
             j = send_base
-            data_start = (window[j].mult*2*WINDOW_SIZE + window[j].seq)*MSS
+            data_start = (window[j].mult*SEQ_SIZE + window[j].seq)*MSS
             data_end = data_start + MSS
             data_temp = bytearray(data[data_start:data_end])
 
@@ -173,7 +173,7 @@ while(sending == 1):
     while(window[send_base].state == STATE_ACKED):
 
         # See if we're done sending the file
-        data_start = (window[send_base].mult*2*WINDOW_SIZE + window[send_base].seq)*MSS
+        data_start = (window[send_base].mult*SEQ_SIZE + window[send_base].seq)*MSS
         data_end = data_start + MSS
 
         if(data_end >= data_len):
@@ -184,8 +184,8 @@ while(sending == 1):
         window[send_base].mult = window[send_base].mult+1
 
         send_base = send_base+1
-        if(send_base >= 2*WINDOW_SIZE):
-            send_base = send_base - 2*WINDOW_SIZE
+        if(send_base >= SEQ_SIZE):
+            send_base = send_base - SEQ_SIZE
 
 
 print("Done sending file")
