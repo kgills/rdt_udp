@@ -11,10 +11,9 @@ from random import randint
 
 signal.signal(signal.SIGINT, signal_handler)
 
-print("UDP Server IP:", SERVER_IP)
 print("UDP Server port:", SERVER_PORT)
 
-sock.bind((SERVER_IP, SERVER_PORT))
+sock.bind(("localhost", SERVER_PORT))
 while True:
 
     print("Waiting for new transfer")
@@ -36,7 +35,7 @@ while True:
 
             # Send NACK for this packet
             ack_packet = pack_packet(FLAGS_MACK, data_temp[SEQ_POS], 0)
-            sock.sendto(ack_packet, (CLIENT_IP, CLIENT_PORT))
+            sock.sendto(ack_packet, (addr))
             continue
 
         elif(data_temp[SEQ_POS] != seq_exp):
@@ -44,13 +43,13 @@ while True:
 
             # ACK last good packet
             ack_packet = pack_packet(FLAGS_ACK, seq_exp-1, 0)
-            sock.sendto(ack_packet, (CLIENT_IP, CLIENT_PORT))
+            sock.sendto(ack_packet, (addr))
             continue
 
         else:
             # ACK this packet
             ack_packet = pack_packet(FLAGS_ACK, data_temp[SEQ_POS], 0)
-            sock.sendto(ack_packet, (CLIENT_IP, CLIENT_PORT))
+            sock.sendto(ack_packet, (addr))
 
         # Add the data
         data += data_temp[5:]

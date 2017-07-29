@@ -2,13 +2,11 @@ import socket
 import signal
 import sys
 
-SERVER_IP = "127.0.0.1"
 SERVER_PORT = 5005
-
-CLIENT_IP = "127.0.0.1"
 CLIENT_PORT = 5006
 
-SOCK_TIMEOUT = 0.1 # 100 ms
+# SOCK_TIMEOUT = 0.1 # 100 ms
+SOCK_TIMEOUT = 0.0 # non-blocking
 
 WINDOW_SIZE = 1
 
@@ -93,5 +91,6 @@ STATE_UNUSABLE = 3
 class WindowElement:
     data = bytearray()
     seq = 0
+    mult = 1
     time_sent = 0
     state = STATE_UNUSABLE

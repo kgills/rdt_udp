@@ -12,19 +12,17 @@ import datetime
 signal.signal(signal.SIGINT, signal_handler)
 
 # Parse the input arguments
-usage = "python client.py <path_to_file>"
-if len(sys.argv) < 2:
+usage = "python client.py server_ip <path_to_file>"
+if len(sys.argv) < 3:
     print(usage)
     sys.exit(1)
 
-print ("UDP Server IP:", SERVER_IP)
-print ("UDP Server port:", SERVER_PORT)
-
-print("UDP Client IP:", CLIENT_IP)
+server_ip = sys.argv[1]
+print ("UDP Server IP:", server_ip)
 print("UDP Client port:", CLIENT_PORT)
 
 # Setup listener for the ACK packets from the server
-sock.bind((CLIENT_IP, CLIENT_PORT))
+sock.bind(("localhost", CLIENT_PORT))
 
 # Set the timeout
 sock.settimeout(SOCK_TIMEOUT)
@@ -45,7 +43,7 @@ for i in range(0,256):
 # print(elapsed.total_seconds())
 
 # Get a byte array of the file
-with open(sys.argv[1], "rb") as sendFile:
+with open(sys.argv[2], "rb") as sendFile:
     f = sendFile.read()
     data = bytearray(f)
 
@@ -72,7 +70,7 @@ while(i < data_len):
 
     while True:
         # Send the packet
-        sock.sendto(data_temp, (SERVER_IP, SERVER_PORT))
+        sock.sendto(data_temp, (server_ip, SERVER_PORT))
 
         # Wait for an ACK
         try:
