@@ -94,7 +94,7 @@ while(receiving == 1):
 
         else:
             nack_packet = pack_packet(FLAGS_NACK, packet_data[SEQ_POS])
-            sock.sendto(ack_packet, (addr))
+            sock.sendto(nack_packet, (addr))
 
     ############################################################################
     # Advance the RECV base
