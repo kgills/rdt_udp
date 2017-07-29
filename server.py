@@ -1,12 +1,10 @@
 #! /usr/bin/env python
 
 from rdt_defs import *
-
 from random import randint
 
 ################################################################################
 # Definitions
-
 
 ################################################################################
 # Main
@@ -16,7 +14,6 @@ signal.signal(signal.SIGINT, signal_handler)
 print("UDP Server IP:", SERVER_IP)
 print("UDP Server port:", SERVER_PORT)
 
-
 sock.bind((SERVER_IP, SERVER_PORT))
 while True:
 
@@ -25,8 +22,8 @@ while True:
     # Clear the data buffer
     data = bytearray()
 
-    # Clear the crc_error flag
-    crc_error = 0
+    # Clear the sequence number
+    seq_exp = 0
 
     while True:
 
@@ -35,22 +32,24 @@ while True:
         data_temp = bytearray(data_temp)
 
         if(crc_check(data_temp) != True):
-            crc_error = 1
             print("CRC Error! packet_crc:", hex(crc), "calc_crc:",hex(crc_calc))
-            break;
 
+            # Send NACK for this packet
+            ack_packet = pack_packet(FLAGS_MACK, data_temp[SEQ_POS], 0)
+            sock.sendto(ack_packet, (CLIENT_IP, CLIENT_PORT))
+            continue
 
-        # Simulate packet drop
-        if(randint(0,100) != 1):
+        elif(data_temp[SEQ_POS] != seq_exp):
+            print("SEQ mismatch! seq_exp:", hex(seq_exp), "seq_rec:",hex(data_temp[SEQ_POS]))
 
-            # Simulate NACK
-            if(randint(0,100) == 1):
-                # Send NACK
-                ack_packet = pack_packet(FLAGS_NACK, data_temp[SEQ_POS], 0)
-            else:
-                ack_packet = pack_packet(FLAGS_ACK, data_temp[SEQ_POS], 0)
+            # ACK last good packet
+            ack_packet = pack_packet(FLAGS_ACK, seq_exp-1, 0)
+            sock.sendto(ack_packet, (CLIENT_IP, CLIENT_PORT))
+            continue
 
-            # Send the ACK
+        else:
+            # ACK this packet
+            ack_packet = pack_packet(FLAGS_ACK, data_temp[SEQ_POS], 0)
             sock.sendto(ack_packet, (CLIENT_IP, CLIENT_PORT))
 
         # Add the data
@@ -60,9 +59,14 @@ while True:
         if ((data_temp[FLAGS_POS] & FLAGS_FIN) == FLAGS_FIN):
             break;
 
-    if(crc_error == 0):
-        print("Writing file")
-        # Write byte array to file
-        with open("output.png", 'wb') as output:
-            output.write(data)
+        # Advance the sequence number expected
+        seq_exp += 1
+        if(seq_exp == 256):
+            seq_exp = 0
+
+
+    print("Writing file")
+    # Write byte array to file
+    with open("output.png", 'wb') as output:
+        output.write(data)
 

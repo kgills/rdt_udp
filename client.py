@@ -17,6 +17,12 @@ if len(sys.argv) < 2:
     print(usage)
     sys.exit(1)
 
+print ("UDP Server IP:", SERVER_IP)
+print ("UDP Server port:", SERVER_PORT)
+
+print("UDP Client IP:", CLIENT_IP)
+print("UDP Client port:", CLIENT_PORT)
+
 # Setup listener for the ACK packets from the server
 sock.bind((CLIENT_IP, CLIENT_PORT))
 
@@ -46,66 +52,55 @@ with open(sys.argv[1], "rb") as sendFile:
 data_len = len(data)
 i = 0
 pos = 0
-send_base = 0
+seq = 0
 
 while(i < data_len):
 
-        # First packet send the file name
+    # Isolate the packet
+    i += MSS
+    data_temp = bytearray(data[pos:i])
+    pos = i
 
-        ########################################################################
-        # Send all of the sequence numbers that we can
+    # Create the header elements
+    if(i >= data_len):
+        flags = FLAGS_FIN
+    else:
+        flags = 0
+    window = 0
 
-        # Isolate the packet
-        i += MSS
-        data_temp = bytearray(data[pos:i])
-        pos = i
+    data_temp = pack_packet(flags, seq, window, data_temp)
 
-        # Create the header elements
-        if(i >= data_len):
-            flags = FLAGS_FIN
-        else:
-            flags = 0
-        window = 0
-
-        data_temp = pack_packet(flags, seq, window, data_temp)
-
+    while True:
         # Send the packet
         sock.sendto(data_temp, (SERVER_IP, SERVER_PORT))
-
-        # Update the sequence number
-        seq += 1
-        if(seq == 256):
-            seq = 1
-
-        ########################################################################
-
-
-        ########################################################################
-        # Read out all of the ACKS
 
         # Wait for an ACK
         try:
             ack_data, addr = sock.recvfrom(PACKET_LEN)  
         except socket.timeout:
             print("Timed out waiting for ACK")
+            continue
 
         # Check the CRC
         if(crc_check(ack_data) != True):
             print("Error CRC")
+            continue
         # Resend if it's not an ack packet
         if((ack_data[FLAGS_POS] & FLAGS_ACK) != FLAGS_ACK):
             print("Error NACK")
+            continue
         # Resend if the sequence number doesn't match
         if(ack_data[SEQ_POS] != seq):
             print("Error SEQ Mismatch")
+            continue
 
-        ########################################################################
+        break
 
-        ########################################################################
-        # Advance the send_base
+    # Update the sequence number
+    seq += 1
+    if(seq == 256):
+        seq = 0
 
-        ########################################################################
 
-
-# print("Done sending file")
+print("Done sending file")
 sock.close()
