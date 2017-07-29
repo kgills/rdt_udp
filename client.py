@@ -19,8 +19,8 @@ def signal_handler(signal, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 # Parse the input arguments
-usage = "python client.py <path_to_file>"
-if len(sys.argv) < 2:
+usage = "python client.py <path_to_file> loss% latency(ms)"
+if len(sys.argv) < 4:
     print(usage)
     sys.exit(1)
 
@@ -50,6 +50,8 @@ with open(sys.argv[1], "rb") as sendFile:
 
 data_len = len(data)
 print("Data_len =",data_len)
+
+start_time = datetime.datetime.now()
 
 # Initialize the send_base
 send_base = 0
@@ -187,6 +189,9 @@ while(sending == 1):
         if(send_base >= SEQ_SIZE):
             send_base = send_base - SEQ_SIZE
 
+end_time = datetime.datetime.now()
 
+print("loss, latency, mss, elapsed")
+print(sys.argv[2],",",sys.argv[3],",",MSS,",",(end_time-start_time).total_seconds())
 print("Done sending file")
 sock.close()

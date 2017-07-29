@@ -46,7 +46,7 @@ print("Waiting for new transfer")
 
 # Clear the data buffer
 data = bytearray()
-
+start = 1
 receiving = 1
 while(receiving == 1):
 
@@ -59,6 +59,10 @@ while(receiving == 1):
         except socket.error:
             # No pending ACKS
             break
+
+        if(start == 1):
+            print("Receiving the file")
+            start = 0
 
         send_nack = 0
 
