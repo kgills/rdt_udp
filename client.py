@@ -134,8 +134,8 @@ while(sending == 1):
             # Save the state
             window[j].time_sent = datetime.datetime.now()
 
-        # Register the ACK
-        else:
+        # Register the ACK if we're waiting on it
+        elif(window[ack_data[SEQ_POS]].state == STATE_UNACKED):
             j = ack_data[SEQ_POS]
             window[j].state = STATE_ACKED
 

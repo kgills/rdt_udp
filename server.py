@@ -98,7 +98,7 @@ while(receiving == 1):
             if(high_limit >= SEQ_SIZE):
                 hight_limit = high_limit - SEQ_SIZE
 
-            if(((seq - low_limit)%(SEQ_SIZE)) > ((high_limit - low_limit)%(SEQ_SIZE))):
+            if(((seq - low_limit)%(SEQ_SIZE)) >= ((high_limit - low_limit)%(SEQ_SIZE))):
                 # Drop the packet if outside the window size
                 pass
                 
@@ -108,10 +108,10 @@ while(receiving == 1):
                 sock.sendto(ack_packet, (addr))
 
                 # Save the state
-                window[packet_data[SEQ_POS]].state = STATE_ACKED
+                window[seq].state = STATE_ACKED
 
                 # Buffer the data
-                window[packet_data[SEQ_POS]].data = packet_data
+                window[seq].data = packet_data
                 
     ############################################################################
     # Advance the RECV base
