@@ -31,6 +31,7 @@ print("output_file = ",output_file)
 
 # Set the timeout, open the socket
 sock.settimeout(SOCK_TIMEOUT)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sock.bind((server_ip, SERVER_PORT))
 
 # Initialize the window

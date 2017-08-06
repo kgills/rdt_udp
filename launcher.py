@@ -1,6 +1,7 @@
 import signal
 import sys
 import subprocess
+import os
 
 ################################################################################
 # Definitions
@@ -26,7 +27,6 @@ RESULTS_FILE="results.txt"
 
 def signal_handler(signal, frame):
     print("\nClosing launcher")
-    sock.close()
     sys.exit(0)
 
 def my_range(start, end, step):
@@ -48,6 +48,15 @@ file.close()
 for delay in my_range(PROP_DELAY_START, PROP_DELAY_END, PROP_DELAY_INC):
     for drop in my_range(DROP_START, DROP_END, DROP_INC):
         # Set the network prop delay, variance, and drop
+        network_command = "sudo -S tc qdisc del dev lo root"
+        print(network_command)
+        network_process = subprocess.Popen(network_command, shell=True, stdout=subprocess.PIPE)
+        network_process.wait()
+
+        network_command ="sudo tc qdisc add dev lo root netem delay "+str(delay)+"ms "+str(PROP_VAR)+"ms loss "+str(drop)+"%"
+        print(network_command)
+        network_process = subprocess.Popen(network_command, shell=True, stdout=subprocess.PIPE)
+        network_process.wait()
 
         for mss in my_range(MSS_START, MSS_END, MSS_INC):
             for window in my_range(WINDOW_START, WINDOW_END, WINDOW_INC):
@@ -68,7 +77,10 @@ for delay in my_range(PROP_DELAY_START, PROP_DELAY_END, PROP_DELAY_INC):
                 client_process.wait()
 
                 # Close the server
+                pid = server_process.pid
+                os.kill(pid, signal.SIGINT)
                 server_process.kill()
+                server_process.wait()
 
                 # Diff the files
                 diff_command = "diff random.img random_out.img"
