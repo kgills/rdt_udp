@@ -16,12 +16,14 @@ def signal_handler(signal, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 # Parse the input arguments
-usage = "python server.py output_file_name"
-if len(sys.argv) < 2:
+usage = "python server.py output_file_name window"
+if len(sys.argv) < 3:
     print(usage)
     sys.exit(1)
 
 output_file = sys.argv[1]
+window_size = int(sys.argv[2])
+
 server_ip = "localhost"
 print("UDP Server IP  :", server_ip)
 print("UDP Server port:", SERVER_PORT)
@@ -75,7 +77,7 @@ while(receiving == 1):
         # Check that the sequence number is in the window
         seq = packet_data[SEQ_POS]
 
-        low_limit = recv_base - WINDOW_SIZE
+        low_limit = recv_base - window_size
         if(low_limit < 0):
             low_limit = SEQ_SIZE + low_limit
 
@@ -94,7 +96,7 @@ while(receiving == 1):
             if(low_limit < 0):
                 low_limit = SEQ_SIZE + low_limit
 
-            high_limit = recv_base + WINDOW_SIZE
+            high_limit = recv_base + window_size
             if(high_limit >= SEQ_SIZE):
                 hight_limit = high_limit - SEQ_SIZE
 
