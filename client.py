@@ -192,8 +192,8 @@ while(sending == 1):
         window[send_base].mult = window[send_base].mult+1
 
         send_base = send_base+1
-        if(send_base >= SEQ_SIZE):
-            send_base = send_base - SEQ_SIZE
+        if(send_base == SEQ_SIZE):
+            send_base = 0
 
 end_time = datetime.datetime.now()
 elapsed = (end_time-start_time).total_seconds()
