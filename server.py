@@ -51,56 +51,68 @@ receiving = 1
 while(receiving == 1):
 
     ############################################################################
-    # Process the ACKs
-    while True:
+    # Process next ACK
 
-        try:
-            packet_data, addr = sock.recvfrom(PACKET_LEN)  
-        except socket.error:
-            # No pending ACKS
-            break
+    data_present = 0
+    try:
+        packet_data, addr = sock.recvfrom(PACKET_LEN) 
+        data_present = 1 
+    except socket.error:
+        # No pending ACKS
+        data_present = 0    
 
+    if(data_present == 1):
         if(start == 1):
             print("Receiving the file")
             start = 0
 
-        send_nack = 0
-
         # Check the CRC
         if(crc_check(packet_data) != True):
-            send_nack = 1
+            nack_packet = pack_packet(FLAGS_NACK, packet_data[SEQ_POS])
+            sock.sendto(nack_packet, (addr))
+            break
 
         # Check that the sequence number is in the window
         seq = packet_data[SEQ_POS]
 
-        low_limit = recv_base
+        low_limit = recv_base - WINDOW_SIZE
         if(low_limit < 0):
             low_limit = SEQ_SIZE + low_limit
 
-        high_limit = recv_base + WINDOW_SIZE
-        if(high_limit >= SEQ_SIZE):
-            hight_limit = high_limit - SEQ_SIZE
+        high_limit = recv_base - 1
+        if(high_limit < 0):
+            high_limit = SEQ_SIZE + high_limit
 
-        if(((seq - low_limit)%(SEQ_SIZE)) > ((high_limit - low_limit)%(SEQ_SIZE))):
+        if(((seq - low_limit)%(SEQ_SIZE)) <= ((high_limit - low_limit)%(SEQ_SIZE))):
             # Send ACK without saving the data
             ack_packet = pack_packet(FLAGS_ACK, packet_data[SEQ_POS])
             sock.sendto(ack_packet, (addr))
-
-        elif(send_nack == 0):
-            # Send ACK
-            ack_packet = pack_packet(FLAGS_ACK, packet_data[SEQ_POS])
-            sock.sendto(ack_packet, (addr))
-
-            # Save the state
-            window[packet_data[SEQ_POS]].state = STATE_ACKED
-
-            # Buffer the data
-            window[packet_data[SEQ_POS]].data = packet_data
-
+        
         else:
-            nack_packet = pack_packet(FLAGS_NACK, packet_data[SEQ_POS])
-            sock.sendto(nack_packet, (addr))
 
+            low_limit = recv_base
+            if(low_limit < 0):
+                low_limit = SEQ_SIZE + low_limit
+
+            high_limit = recv_base + WINDOW_SIZE
+            if(high_limit >= SEQ_SIZE):
+                hight_limit = high_limit - SEQ_SIZE
+
+            if(((seq - low_limit)%(SEQ_SIZE)) > ((high_limit - low_limit)%(SEQ_SIZE))):
+                # Drop the packet if outside the window size
+                pass
+                
+            else:
+                # Send ACK
+                ack_packet = pack_packet(FLAGS_ACK, packet_data[SEQ_POS])
+                sock.sendto(ack_packet, (addr))
+
+                # Save the state
+                window[packet_data[SEQ_POS]].state = STATE_ACKED
+
+                # Buffer the data
+                window[packet_data[SEQ_POS]].data = packet_data
+                
     ############################################################################
     # Advance the RECV base
 
