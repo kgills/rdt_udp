@@ -70,4 +70,13 @@ for delay in my_range(PROP_DELAY_START, PROP_DELAY_END, PROP_DELAY_INC):
                 # Close the server
                 server_process.kill()
 
+                # Diff the files
+                diff_command = "diff random.img random_out.img"
+                print(diff_command)
+                diff_process = subprocess.Popen(diff_command, shell=True, stdout=subprocess.PIPE)
+                diff_process.wait()
+                print(diff_process.returncode)
+                if(diff_process.returncode != 0):
+                    print("ERROR in diff")
+                    sys.exit(1)
 
