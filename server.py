@@ -73,7 +73,7 @@ while(receiving == 1):
         # Check that the sequence number is in the window
         seq = packet_data[SEQ_POS]
 
-        low_limit = recv_base - WINDOW_SIZE
+        low_limit = recv_base
         if(low_limit < 0):
             low_limit = SEQ_SIZE + low_limit
 
@@ -82,11 +82,12 @@ while(receiving == 1):
             hight_limit = high_limit - SEQ_SIZE
 
         if(((seq - low_limit)%(SEQ_SIZE)) > ((high_limit - low_limit)%(SEQ_SIZE))):
-            print("SEQ out of range:",seq,"low:",low_limit,"high:",high_limit)
-            send_nack = 1
+            # Send ACK without saving the data
+            ack_packet = pack_packet(FLAGS_ACK, packet_data[SEQ_POS])
+            sock.sendto(ack_packet, (addr))
 
-        # Send ACK
-        if(send_nack == 0):
+        elif(send_nack == 0):
+            # Send ACK
             ack_packet = pack_packet(FLAGS_ACK, packet_data[SEQ_POS])
             sock.sendto(ack_packet, (addr))
 

@@ -25,9 +25,9 @@ if len(sys.argv) < 5:
     sys.exit(1)
 
 server_ip = "localhost"
-print("UDP Server IP  :", server_ip)
-print("UDP Server port:", SERVER_PORT)
-print("UDP Client port:", CLIENT_PORT)
+# print("UDP Server IP  :", server_ip)
+# print("UDP Server port:", SERVER_PORT)
+# print("UDP Client port:", CLIENT_PORT)
 
 # Setup listener for the ACK packets from the server
 sock.settimeout(SOCK_TIMEOUT)
@@ -49,7 +49,7 @@ with open(sys.argv[1], "rb") as sendFile:
     data = bytearray(f)
 
 data_len = len(data)
-print("Data_len =",data_len)
+# print("Data_len =",data_len)
 
 start_time = datetime.datetime.now()
 
@@ -140,34 +140,40 @@ while(sending == 1):
             window[j].state = STATE_ACKED
 
     ############################################################################
-    # Check the send_base for timeout
+    # Check for timeouts
     
-    if(window[send_base].state == STATE_UNACKED):
+    for i in range(0, WINDOW_SIZE):
 
-        # See if the send_base has timed out
-        now = datetime.datetime.now()
-        elapsed = (now - window[send_base].time_sent).total_seconds() * 1000     # convert S to MS
-        if(int(elapsed) > SEND_BASE_TIMEOUT_MS):
+        # Wrap the window pointer
+        j = send_base + i
+        if(j >= SEQ_SIZE):
+            j = j - SEQ_SIZE
 
-            # Find the piece of data we need to send
-            j = send_base
-            data_start = (window[j].mult*SEQ_SIZE + window[j].seq)*MSS
-            data_end = data_start + MSS
-            data_temp = bytearray(data[data_start:data_end])
+        if(window[j].state == STATE_UNACKED):
 
-            # Create the header elements
-            if(data_end >= data_len):
-                flags = FLAGS_FIN
-            else:
-                flags = 0
+            # See if the send_base has timed out
+            now = datetime.datetime.now()
+            elapsed = (now - window[j].time_sent).total_seconds() * 1000     # convert S to MS
+            if(int(elapsed) > SEND_BASE_TIMEOUT_MS):
 
-            data_temp = pack_packet(flags, window[j].seq, data_temp)
+                # Find the piece of data we need to send
+                data_start = (window[j].mult*SEQ_SIZE + window[j].seq)*MSS
+                data_end = data_start + MSS
+                data_temp = bytearray(data[data_start:data_end])
 
-            # Send the packet
-            sock.sendto(data_temp, (server_ip, SERVER_PORT))
+                # Create the header elements
+                if(data_end >= data_len):
+                    flags = FLAGS_FIN
+                else:
+                    flags = 0
 
-            # Save the state
-            window[j].time_sent = datetime.datetime.now()
+                data_temp = pack_packet(flags, window[j].seq, data_temp)
+
+                # Send the packet
+                sock.sendto(data_temp, (server_ip, SERVER_PORT))
+
+                # Save the state
+                window[j].time_sent = datetime.datetime.now()
                 
     ############################################################################
     # Advanse the send_base
@@ -190,8 +196,9 @@ while(sending == 1):
             send_base = send_base - SEQ_SIZE
 
 end_time = datetime.datetime.now()
+elapsed = (end_time-start_time).total_seconds()
 
-print("len, loss, latency, variance, mss, elapsed")
-print(data_len,",",sys.argv[2],",",sys.argv[3],",",sys.argv[4],",",MSS,",",(end_time-start_time).total_seconds())
-print("Done sending file")
+# print("len, loss, latency, variance, mss, elapsed, bps")
+print(data_len,",",sys.argv[2],",",sys.argv[3],",",sys.argv[4],",",MSS,",",elapsed, (8*data_len)/elapsed)
+# print("Done sending file")
 sock.close()
