@@ -77,10 +77,11 @@ for delay in my_range(PROP_DELAY_START, PROP_DELAY_END, PROP_DELAY_INC):
                 client_process.wait()
 
                 # Close the server
-                pid = server_process.pid
-                os.kill(pid, signal.SIGINT)
-                server_process.kill()
-                server_process.wait()
+                kill_command = "sudo kill -9 $(pgrep -f server.py)"
+                print(kill_command)
+                kill_process = subprocess.Popen(kill_command, shell=True, stdout=subprocess.PIPE)
+                kill_process.wait()
+
 
                 # Diff the files
                 diff_command = "diff random.img random_out.img"
