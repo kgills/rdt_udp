@@ -24,6 +24,9 @@ if len(sys.argv) < 7:
     print(usage)
     sys.exit(1)
 
+latency = int(sys.argv[3])
+latency_var = int(sys.argv[4])
+send_base_timeout = 2*latency + 4*latency_var
 mss = int(sys.argv[5])
 window_size = int(sys.argv[6])
 
@@ -157,7 +160,7 @@ while(sending == 1):
             # See if the send_base has timed out
             now = datetime.datetime.now()
             elapsed = (now - window[j].time_sent).total_seconds() * 1000     # convert S to MS
-            if(int(elapsed) > SEND_BASE_TIMEOUT_MS):
+            if(int(elapsed) > send_base_timeout):
 
                 # Find the piece of data we need to send
                 data_start = (window[j].mult*SEQ_SIZE + window[j].seq)*mss
